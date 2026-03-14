@@ -35,12 +35,55 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# 初始化session状态
+if 'session' not in st.session_state:
+    st.session_state.session = requests.Session()
+    st.session_state.session.verify = False
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    st.session_state.session.mount("http://", adapter)
+    st.session_state.session.mount("https://", adapter)
+
+if 'current_m_h5_tk' not in st.session_state:
+    st.session_state.current_m_h5_tk = "717336018584e9c7c54f266f5db96fca_1772912434028"
+
+if 'auth_info' not in st.session_state:
+    st.session_state.auth_info = {
+        "cookies": {},
+        "headers": {},
+        "params": {},
+        "data": {},
+        "utdid": None,
+        "token": None,
+        "m_h5_tk": None
+    }
+
+if 'upload_history' not in st.session_state:
+    st.session_state.upload_history = []
+
+if 'preview_url' not in st.session_state:
+    st.session_state.preview_url = None
+
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+
+if 'bg_color' not in st.session_state:
+    st.session_state.bg_color = "#ffffff"  # 默认白色背景
+
+if 'show_success_popup' not in st.session_state:
+    st.session_state.show_success_popup = False
+
 # 自定义CSS美化
 st.markdown("""
 <style>
     /* 全局样式 */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: v-bind(bg_color);
+        transition: background-color 0.3s ease;
     }
     
     /* 主容器样式 */
@@ -64,6 +107,102 @@ st.markdown("""
     .main-header p {
         font-size: 1.2rem;
         opacity: 0.9;
+    }
+    
+    /* 登录卡片样式 */
+    .login-card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        max-width: 400px;
+        margin: 2rem auto;
+        text-align: center;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .login-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 1rem;
+    }
+    
+    .login-subtitle {
+        color: #666;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .question-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* 弹窗样式 */
+    .success-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        z-index: 9999;
+        text-align: center;
+        animation: popIn 0.3s ease;
+        border: 2px solid #667eea;
+    }
+    
+    .popup-content {
+        font-size: 5rem;
+        line-height: 1;
+        margin-bottom: 1rem;
+    }
+    
+    .popup-text {
+        font-size: 1.2rem;
+        color: #333;
+        font-weight: 500;
+    }
+    
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes popIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
     }
     
     /* 卡片样式 */
@@ -219,41 +358,17 @@ st.markdown("""
         font-size: 0.9rem;
         margin-top: 0.5rem;
     }
+    
+    /* 颜色选择器样式 */
+    .color-picker {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: white;
+        border-radius: 10px;
+        border: 1px solid #eee;
+    }
 </style>
 """, unsafe_allow_html=True)
-
-# 初始化session状态
-if 'session' not in st.session_state:
-    st.session_state.session = requests.Session()
-    st.session_state.session.verify = False
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    st.session_state.session.mount("http://", adapter)
-    st.session_state.session.mount("https://", adapter)
-
-if 'current_m_h5_tk' not in st.session_state:
-    st.session_state.current_m_h5_tk = "717336018584e9c7c54f266f5db96fca_1772912434028"
-
-if 'auth_info' not in st.session_state:
-    st.session_state.auth_info = {
-        "cookies": {},
-        "headers": {},
-        "params": {},
-        "data": {},
-        "utdid": None,
-        "token": None,
-        "m_h5_tk": None
-    }
-
-if 'upload_history' not in st.session_state:
-    st.session_state.upload_history = []
-
-if 'preview_url' not in st.session_state:
-    st.session_state.preview_url = None
 
 # 创建会话函数
 def create_session_with_retries() -> requests.Session:
@@ -394,8 +509,6 @@ def download_image_with_fallback(url: str, timeout: int = 30) -> Tuple[bytes, st
     with st.status("🔄 正在处理图片...", expanded=True) as status:
         st.write(f"开始处理图片URL: {url}")
         
-        # 检查URL可访问性
-        st.write("检查URL可访问性...")
         accessible, status_code, reason = check_url_accessibility(url)
         
         if status_code == 401:
@@ -721,412 +834,482 @@ def upload_from_url(file_url: str, auth_info: dict) -> str:
     
     return final_url
 
+# 登录页面
+def show_login():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+        <div class="login-card">
+            <div class="login-title">🔐 访问验证</div>
+            <div class="login-subtitle">请输入正确答案继续</div>
+            <div class="question-box">
+                🤔 世界上谁最帅？
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        answer = st.text_input("你的答案", type="password", placeholder="请输入答案...")
+        
+        if st.button("确认进入", use_container_width=True):
+            if answer.strip().lower() == "夏目":
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("❌ 答案错误，请重试！")
+
+# 显示成功弹窗
+def show_success_popup():
+    if st.session_state.show_success_popup:
+        st.markdown("""
+        <div class="popup-overlay" onclick="document.querySelector('.success-popup').style.display='none'"></div>
+        <div class="success-popup">
+            <div class="popup-content">✅️</div>
+            <div class="popup-text">头像更新成功！</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 3秒后自动关闭弹窗
+        time.sleep(3)
+        st.session_state.show_success_popup = False
+        st.rerun()
+
 # 主界面
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    st.markdown("""
-    <div class="main-header">
-        <h1>🖼️ 闲鱼头像自动更新工具</h1>
-        <p>轻松更换你的闲鱼头像，支持各种图片格式</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-# 创建标签页
-tab1, tab2, tab3 = st.tabs(["📝 头像更新", "📊 历史记录", "⚙️ 设置"])
-
-with tab1:
-    # 创建两列布局
-    left_col, right_col = st.columns([3, 2])
+def main_app():
+    # 显示成功弹窗
+    show_success_popup()
     
-    with left_col:
-        # 第一步：图片URL
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-title">
-                <span class="step-number">1</span>
-                输入图片URL
-            </div>
-        """, unsafe_allow_html=True)
+    # 背景颜色选择器
+    with st.sidebar:
+        st.markdown("### 🎨 界面设置")
         
-        image_url = st.text_input(
-            "图片URL",
-            placeholder="https://example.com/image.gif",
-            help="支持各种格式：gif, jpg, png, webp 等",
-            key="image_url_input",
-            on_change=lambda: st.session_state.update(
-                preview_url=st.session_state.image_url_input if st.session_state.image_url_input else None
-            )
+        # 颜色选择器
+        st.session_state.bg_color = st.color_picker(
+            "选择背景颜色",
+            value=st.session_state.bg_color,
+            help="点击选择您喜欢的背景颜色"
         )
         
-        if image_url:
-            if not image_url.startswith(('http://', 'https://')):
-                st.warning("⚠️ URL格式可能不正确，请确保以 http:// 或 https:// 开头")
+        # 应用CSS变量
+        st.markdown(f"""
+        <style>
+            .stApp {{
+                background-color: {st.session_state.bg_color} !important;
+            }}
+        </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.markdown("### 📊 统计信息")
+        st.metric("总上传次数", len(st.session_state.upload_history))
+        if st.session_state.upload_history:
+            total_size = sum(float(item["大小"].replace(" KB", "")) for item in st.session_state.upload_history)
+            st.metric("总上传大小", f"{total_size:.1f} KB")
+    
+    # 主界面内容
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+        <div class="main-header">
+            <h1>🖼️ 闲鱼头像自动更新工具</h1>
+            <p>轻松更换你的闲鱼头像，支持各种图片格式</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 创建标签页
+    tab1, tab2, tab3 = st.tabs(["📝 头像更新", "📊 历史记录", "⚙️ 设置"])
+
+    with tab1:
+        # 创建两列布局
+        left_col, right_col = st.columns([3, 2])
+        
+        with left_col:
+            # 第一步：图片URL
+            st.markdown("""
+            <div class="step-card">
+                <div class="step-title">
+                    <span class="step-number">1</span>
+                    输入图片URL
+                </div>
+            """, unsafe_allow_html=True)
             
-            # 预览按钮
-            if st.button("🔍 预览图片", key="preview_btn", use_container_width=True):
-                st.session_state.preview_url = image_url
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 第二步：认证信息
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-title">
-                <span class="step-number">2</span>
-                提供认证信息
-            </div>
-        """, unsafe_allow_html=True)
-        
-        input_method = st.radio(
-            "选择输入方式",
-            ["📋 粘贴完整的HTTP请求（推荐）", "✏️ 手动输入关键信息"],
-            horizontal=True,
-            key="input_method_main"
-        )
-        
-        if input_method == "📋 粘贴完整的HTTP请求（推荐）":
-            with st.expander("📝 查看示例请求格式", expanded=False):
-                st.code("""https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&appKey=12574478&...
+            image_url = st.text_input(
+                "图片URL",
+                placeholder="https://example.com/image.gif",
+                help="支持各种格式：gif, jpg, png, webp 等",
+                key="image_url_input",
+                on_change=lambda: st.session_state.update(
+                    preview_url=st.session_state.image_url_input if st.session_state.image_url_input else None
+                )
+            )
+            
+            if image_url:
+                if not image_url.startswith(('http://', 'https://')):
+                    st.warning("⚠️ URL格式可能不正确，请确保以 http:// 或 https:// 开头")
+                
+                if st.button("🔍 预览图片", key="preview_btn", use_container_width=True):
+                    st.session_state.preview_url = image_url
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # 第二步：认证信息
+            st.markdown("""
+            <div class="step-card">
+                <div class="step-title">
+                    <span class="step-number">2</span>
+                    提供认证信息
+                </div>
+            """, unsafe_allow_html=True)
+            
+            input_method = st.radio(
+                "选择输入方式",
+                ["📋 粘贴完整的HTTP请求（推荐）", "✏️ 手动输入关键信息"],
+                horizontal=True,
+                key="input_method_main"
+            )
+            
+            if input_method == "📋 粘贴完整的HTTP请求（推荐）":
+                with st.expander("📝 查看示例请求格式", expanded=False):
+                    st.code("""https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&appKey=12574478&...
 cookie: xxxx
 x-smallstc: {...}
 ...
 data={"utdid":"xxxx","platform":"mac","miniAppVersion":"9.9.9","profileCode":"avatar","profileImageUrl":"..."}""")
+                
+                request_text = st.text_area(
+                    "请粘贴完整的HTTP请求",
+                    height=200,
+                    placeholder="粘贴完整的HTTP请求内容...",
+                    key="request_text_main"
+                )
+                
+                if st.button("🔍 解析请求", key="parse_btn", use_container_width=True):
+                    if request_text:
+                        with st.spinner("正在解析请求..."):
+                            st.session_state.auth_info = extract_from_request(request_text)
+                            st.success("✅ 请求解析成功！")
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.metric("utdid", st.session_state.auth_info.get("utdid", "未提取")[:20] + "..." if st.session_state.auth_info.get("utdid") else "未提取")
+                            with col2:
+                                st.metric("cookie数量", len(st.session_state.auth_info.get("cookies", {})))
             
-            request_text = st.text_area(
-                "请粘贴完整的HTTP请求",
-                height=200,
-                placeholder="粘贴完整的HTTP请求内容...",
-                key="request_text_main"
-            )
-            
-            if st.button("🔍 解析请求", key="parse_btn", use_container_width=True):
-                if request_text:
-                    with st.spinner("正在解析请求..."):
-                        st.session_state.auth_info = extract_from_request(request_text)
-                        st.success("✅ 请求解析成功！")
-                        
-                        # 显示提取的关键信息
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric("utdid", st.session_state.auth_info.get("utdid", "未提取")[:20] + "..." if st.session_state.auth_info.get("utdid") else "未提取")
-                        with col2:
-                            st.metric("cookie数量", len(st.session_state.auth_info.get("cookies", {})))
-        
-        else:  # 手动输入
-            with st.form("manual_input_form_main"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    utdid = st.text_input("utdid *", help="必需", key="utdid_manual")
-                    cookie2 = st.text_input("cookie2", key="cookie2_manual")
-                    sgcookie = st.text_input("sgcookie", key="sgcookie_manual")
-                    csg = st.text_input("csg", key="csg_manual")
-                with col2:
-                    unb = st.text_input("unb", key="unb_manual")
-                    munb = st.text_input("munb", key="munb_manual")
-                    bx_umidtoken = st.text_input("bx-umidtoken", key="bx_umidtoken_manual")
-                
-                col3, col4 = st.columns(2)
-                with col3:
-                    x_ticid = st.text_input("x-ticid", key="x_ticid_manual")
-                with col4:
-                    mini_janus = st.text_input("mini-janus", key="mini_janus_manual")
-                    bx_ua = st.text_input("bx-ua", key="bx_ua_manual")
-                
-                submitted = st.form_submit_button("💾 保存信息", use_container_width=True)
-                
-                if submitted:
-                    if not utdid:
-                        st.error("❌ utdid不能为空")
-                    else:
-                        st.session_state.auth_info = {
-                            "cookies": {},
-                            "headers": {},
-                            "params": {},
-                            "data": {},
-                            "utdid": utdid,
-                            "token": st.session_state.current_m_h5_tk.split('_')[0] if '_' in st.session_state.current_m_h5_tk else st.session_state.current_m_h5_tk,
-                            "m_h5_tk": st.session_state.current_m_h5_tk,
-                        }
-                        
-                        if cookie2:
-                            st.session_state.auth_info["cookies"]["cookie2"] = cookie2
-                        if sgcookie:
-                            st.session_state.auth_info["cookies"]["sgcookie"] = sgcookie
-                            st.session_state.auth_info["headers"]["sgcookie"] = sgcookie
-                        if csg:
-                            st.session_state.auth_info["cookies"]["csg"] = csg
-                        if unb:
-                            st.session_state.auth_info["cookies"]["unb"] = unb
-                        if munb:
-                            st.session_state.auth_info["cookies"]["munb"] = munb
-                        if bx_umidtoken:
-                            st.session_state.auth_info["headers"]["bx-umidtoken"] = bx_umidtoken
-                        if x_ticid:
-                            st.session_state.auth_info["headers"]["x-ticid"] = x_ticid
-                        if mini_janus:
-                            st.session_state.auth_info["headers"]["mini-janus"] = mini_janus
-                        if bx_ua:
-                            st.session_state.auth_info["headers"]["bx-ua"] = bx_ua
-                        
-                        st.success("✅ 信息保存成功！")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 第三步：执行更新
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-title">
-                <span class="step-number">3</span>
-                执行头像更新
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button("🚀 开始更新头像", key="update_btn", use_container_width=True):
-            if not image_url:
-                st.error("❌ 请先输入图片URL")
-            elif not st.session_state.auth_info.get("utdid"):
-                st.error("❌ 请先提供认证信息")
-            else:
-                try:
-                    # 下载并上传图片
-                    final_url = upload_from_url(image_url, st.session_state.auth_info)
-                    
-                    # 更新头像
-                    with st.status("🔄 正在更新头像信息...", expanded=True) as status:
-                        result = update_avatar(final_url, st.session_state.auth_info)
-                        status.update(label="✅ 头像更新完成", state="complete")
-                    
-                    # 显示结果
-                    st.markdown("""
-                    <div class="success-message">
-                        <h3>✨ 处理完成！</h3>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
+            else:  # 手动输入
+                with st.form("manual_input_form_main"):
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.json(result)
+                        utdid = st.text_input("utdid *", help="必需", key="utdid_manual")
+                        cookie2 = st.text_input("cookie2", key="cookie2_manual")
+                        sgcookie = st.text_input("sgcookie", key="sgcookie_manual")
+                        csg = st.text_input("csg", key="csg_manual")
                     with col2:
-                        if result.get("ret") and "SUCCESS" in str(result["ret"]):
-                            st.success("✅ 头像更新成功！")
-                            st.balloons()
+                        unb = st.text_input("unb", key="unb_manual")
+                        munb = st.text_input("munb", key="munb_manual")
+                        bx_umidtoken = st.text_input("bx-umidtoken", key="bx_umidtoken_manual")
+                    
+                    col3, col4 = st.columns(2)
+                    with col3:
+                        x_ticid = st.text_input("x-ticid", key="x_ticid_manual")
+                    with col4:
+                        mini_janus = st.text_input("mini-janus", key="mini_janus_manual")
+                        bx_ua = st.text_input("bx-ua", key="bx_ua_manual")
+                    
+                    submitted = st.form_submit_button("💾 保存信息", use_container_width=True)
+                    
+                    if submitted:
+                        if not utdid:
+                            st.error("❌ utdid不能为空")
                         else:
-                            st.warning("⚠️ 头像更新可能失败，请检查返回信息")
-                    
-                    # 更新预览
-                    st.session_state.preview_url = final_url
-                    
-                except Exception as e:
-                    st.error(f"❌ 错误: {str(e)}")
-                    with st.expander("查看详细错误信息"):
-                        st.exception(e)
+                            st.session_state.auth_info = {
+                                "cookies": {},
+                                "headers": {},
+                                "params": {},
+                                "data": {},
+                                "utdid": utdid,
+                                "token": st.session_state.current_m_h5_tk.split('_')[0] if '_' in st.session_state.current_m_h5_tk else st.session_state.current_m_h5_tk,
+                                "m_h5_tk": st.session_state.current_m_h5_tk,
+                            }
+                            
+                            if cookie2:
+                                st.session_state.auth_info["cookies"]["cookie2"] = cookie2
+                            if sgcookie:
+                                st.session_state.auth_info["cookies"]["sgcookie"] = sgcookie
+                                st.session_state.auth_info["headers"]["sgcookie"] = sgcookie
+                            if csg:
+                                st.session_state.auth_info["cookies"]["csg"] = csg
+                            if unb:
+                                st.session_state.auth_info["cookies"]["unb"] = unb
+                            if munb:
+                                st.session_state.auth_info["cookies"]["munb"] = munb
+                            if bx_umidtoken:
+                                st.session_state.auth_info["headers"]["bx-umidtoken"] = bx_umidtoken
+                            if x_ticid:
+                                st.session_state.auth_info["headers"]["x-ticid"] = x_ticid
+                            if mini_janus:
+                                st.session_state.auth_info["headers"]["mini-janus"] = mini_janus
+                            if bx_ua:
+                                st.session_state.auth_info["headers"]["bx-ua"] = bx_ua
+                            
+                            st.success("✅ 信息保存成功！")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # 第三步：执行更新
+            st.markdown("""
+            <div class="step-card">
+                <div class="step-title">
+                    <span class="step-number">3</span>
+                    执行头像更新
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🚀 开始更新头像", key="update_btn", use_container_width=True):
+                if not image_url:
+                    st.error("❌ 请先输入图片URL")
+                elif not st.session_state.auth_info.get("utdid"):
+                    st.error("❌ 请先提供认证信息")
+                else:
+                    try:
+                        # 下载并上传图片
+                        final_url = upload_from_url(image_url, st.session_state.auth_info)
+                        
+                        # 更新头像
+                        with st.status("🔄 正在更新头像信息...", expanded=True) as status:
+                            result = update_avatar(final_url, st.session_state.auth_info)
+                            status.update(label="✅ 头像更新完成", state="complete")
+                        
+                        # 显示结果
+                        st.markdown("""
+                        <div class="success-message">
+                            <h3>✨ 处理完成！</h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.json(result)
+                        with col2:
+                            if result.get("ret") and "SUCCESS" in str(result["ret"]):
+                                # 显示成功弹窗
+                                st.session_state.show_success_popup = True
+                                st.rerun()
+                            else:
+                                st.warning("⚠️ 头像更新可能失败，请检查返回信息")
+                        
+                        # 更新预览
+                        st.session_state.preview_url = final_url
+                        
+                    except Exception as e:
+                        st.error(f"❌ 错误: {str(e)}")
+                        with st.expander("查看详细错误信息"):
+                            st.exception(e)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with right_col:
-        # 预览区域
+        with right_col:
+            # 预览区域
+            st.markdown("""
+            <div class="step-card">
+                <div class="step-title">
+                    <span class="step-number">👁️</span>
+                    头像预览
+                </div>
+            """, unsafe_allow_html=True)
+            
+            preview_url = st.session_state.get('preview_url', image_url if image_url else None)
+            
+            if preview_url:
+                st.markdown(f"""
+                <div class="preview-card">
+                    <img src="{preview_url}" class="preview-image" onerror="this.src='https://via.placeholder.com/200?text=加载失败'">
+                    <p style="color: #666; margin-top: 1rem;">点击图片可放大查看</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("### 📊 图片信息")
+                with st.container():
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown("**URL类型**")
+                        st.info("网络图片" if preview_url.startswith(('http://', 'https://')) else "未知")
+                    with col2:
+                        st.markdown("**预览状态**")
+                        st.success("预览中")
+                
+                with st.expander("🔍 点击放大预览"):
+                    st.image(preview_url, use_column_width=True)
+            else:
+                st.markdown("""
+                <div class="preview-card">
+                    <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center;">
+                        <span style="color: white; font-size: 3rem;">🖼️</span>
+                    </div>
+                    <p style="color: #666;">输入URL后点击"预览图片"查看效果</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            with st.expander("💡 快速帮助", expanded=False):
+                st.markdown("""
+                ### 使用说明
+                1. **输入图片URL**：支持各种图片格式
+                2. **提供认证信息**：粘贴HTTP请求或手动输入
+                3. **点击更新**：自动完成上传和更新
+                
+                ### 支持的图片格式
+                - JPG/JPEG
+                - PNG
+                - GIF
+                - WEBP
+                - BMP
+                
+                ### 常见问题
+                - **401错误**：图片需要授权，尝试添加认证信息
+                - **SSL错误**：程序会自动尝试多种下载策略
+                - **上传失败**：检查网络和认证信息
+                """)
+
+    with tab2:
         st.markdown("""
         <div class="step-card">
             <div class="step-title">
-                <span class="step-number">👁️</span>
-                头像预览
+                <span class="step-number">📊</span>
+                上传历史记录
             </div>
         """, unsafe_allow_html=True)
         
-        preview_url = st.session_state.get('preview_url', image_url if image_url else None)
-        
-        if preview_url:
-            st.markdown(f"""
-            <div class="preview-card">
-                <img src="{preview_url}" class="preview-image" onerror="this.src='https://via.placeholder.com/200?text=加载失败'">
-                <p style="color: #666; margin-top: 1rem;">点击图片可放大查看</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 图片信息
-            st.markdown("### 📊 图片信息")
-            with st.container():
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**URL类型**")
-                    st.info("网络图片" if preview_url.startswith(('http://', 'https://')) else "未知")
-                with col2:
-                    st.markdown("**预览状态**")
-                    st.success("预览中")
-            
-            # 放大预览
-            with st.expander("🔍 点击放大预览"):
-                st.image(preview_url, use_column_width=True)
-        else:
-            st.markdown("""
-            <div class="preview-card">
-                <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center;">
-                    <span style="color: white; font-size: 3rem;">🖼️</span>
+        if st.session_state.upload_history:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.markdown("""
+                <div class="stat-card">
+                    <div class="stat-number">{}</div>
+                    <div class="stat-label">总上传次数</div>
                 </div>
-                <p style="color: #666;">输入URL后点击"预览图片"查看效果</p>
-            </div>
-            """, unsafe_allow_html=True)
+                """.format(len(st.session_state.upload_history)), unsafe_allow_html=True)
+            with col2:
+                total_size = sum(float(item["大小"].replace(" KB", "")) for item in st.session_state.upload_history)
+                st.markdown("""
+                <div class="stat-card">
+                    <div class="stat-number">{:.1f} KB</div>
+                    <div class="stat-label">总上传大小</div>
+                </div>
+                """.format(total_size), unsafe_allow_html=True)
+            with col3:
+                avg_size = total_size / len(st.session_state.upload_history) if st.session_state.upload_history else 0
+                st.markdown("""
+                <div class="stat-card">
+                    <div class="stat-number">{:.1f} KB</div>
+                    <div class="stat-label">平均大小</div>
+                </div>
+                """.format(avg_size), unsafe_allow_html=True)
+            with col4:
+                last_time = st.session_state.upload_history[-1]["时间"] if st.session_state.upload_history else "暂无"
+                st.markdown("""
+                <div class="stat-card">
+                    <div class="stat-number">{}</div>
+                    <div class="stat-label">最后上传</div>
+                </div>
+                """.format(last_time.split()[0]), unsafe_allow_html=True)
+            
+            df = pd.DataFrame(st.session_state.upload_history)
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "时间": "上传时间",
+                    "原始URL": "原始URL",
+                    "最终URL": st.column_config.LinkColumn("最终URL"),
+                    "文件名": "文件名",
+                    "大小": "文件大小"
+                }
+            )
+            
+            if st.button("🗑️ 清空历史记录", key="clear_history"):
+                st.session_state.upload_history = []
+                st.rerun()
+        else:
+            st.info("暂无上传历史记录")
         
         st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 快速帮助
-        with st.expander("💡 快速帮助", expanded=False):
-            st.markdown("""
-            ### 使用说明
-            1. **输入图片URL**：支持各种图片格式
-            2. **提供认证信息**：粘贴HTTP请求或手动输入
-            3. **点击更新**：自动完成上传和更新
-            
-            ### 支持的图片格式
-            - JPG/JPEG
-            - PNG
-            - GIF
-            - WEBP
-            - BMP
-            
-            ### 常见问题
-            - **401错误**：图片需要授权，尝试添加认证信息
-            - **SSL错误**：程序会自动尝试多种下载策略
-            - **上传失败**：检查网络和认证信息
-            """)
 
-with tab2:
-    st.markdown("""
-    <div class="step-card">
-        <div class="step-title">
-            <span class="step-number">📊</span>
-            上传历史记录
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if st.session_state.upload_history:
-        # 统计信息
-        col1, col2, col3, col4 = st.columns(4)
+    with tab3:
+        st.markdown("""
+        <div class="step-card">
+            <div class="step-title">
+                <span class="step-number">⚙️</span>
+                系统设置
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        
         with col1:
-            st.markdown("""
-            <div class="stat-card">
-                <div class="stat-number">{}</div>
-                <div class="stat-label">总上传次数</div>
-            </div>
-            """.format(len(st.session_state.upload_history)), unsafe_allow_html=True)
+            st.subheader("🔐 Token管理")
+            st.text_input("当前 _m_h5_tk", value=st.session_state.current_m_h5_tk, disabled=True)
+            
+            if st.button("🔄 重置 Token", use_container_width=True):
+                st.session_state.current_m_h5_tk = "717336018584e9c7c54f266f5db96fca_1772912434028"
+                st.success("Token已重置")
+                st.rerun()
+        
         with col2:
-            total_size = sum(float(item["大小"].replace(" KB", "")) for item in st.session_state.upload_history)
-            st.markdown("""
-            <div class="stat-card">
-                <div class="stat-number">{:.1f} KB</div>
-                <div class="stat-label">总上传大小</div>
-            </div>
-            """.format(total_size), unsafe_allow_html=True)
-        with col3:
-            avg_size = total_size / len(st.session_state.upload_history) if st.session_state.upload_history else 0
-            st.markdown("""
-            <div class="stat-card">
-                <div class="stat-number">{:.1f} KB</div>
-                <div class="stat-label">平均大小</div>
-            </div>
-            """.format(avg_size), unsafe_allow_html=True)
-        with col4:
-            last_time = st.session_state.upload_history[-1]["时间"] if st.session_state.upload_history else "暂无"
-            st.markdown("""
-            <div class="stat-card">
-                <div class="stat-number">{}</div>
-                <div class="stat-label">最后上传</div>
-            </div>
-            """.format(last_time.split()[0]), unsafe_allow_html=True)
+            st.subheader("🗑️ 数据管理")
+            if st.button("🧹 清除所有数据", use_container_width=True):
+                st.session_state.current_m_h5_tk = "717336018584e9c7c54f266f5db96fca_1772912434028"
+                st.session_state.auth_info = {
+                    "cookies": {},
+                    "headers": {},
+                    "params": {},
+                    "data": {},
+                    "utdid": None,
+                    "token": None,
+                    "m_h5_tk": None
+                }
+                st.session_state.upload_history = []
+                st.session_state.preview_url = None
+                st.success("所有数据已清除")
+                st.rerun()
         
-        # 历史记录表格
-        df = pd.DataFrame(st.session_state.upload_history)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "时间": "上传时间",
-                "原始URL": "原始URL",
-                "最终URL": st.column_config.LinkColumn("最终URL"),
-                "文件名": "文件名",
-                "大小": "文件大小"
-            }
-        )
-        
-        # 清空历史按钮
-        if st.button("🗑️ 清空历史记录", key="clear_history"):
-            st.session_state.upload_history = []
-            st.rerun()
-    else:
-        st.info("暂无上传历史记录")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with tab3:
-    st.markdown("""
-    <div class="step-card">
-        <div class="step-title">
-            <span class="step-number">⚙️</span>
-            系统设置
+        st.subheader("📝 关于")
+        st.markdown("""
+        <div class="info-box">
+            <h4>闲鱼头像自动更新工具 v2.0</h4>
+            <p>本工具可以帮助你自动更新闲鱼头像，支持各种图片格式和认证方式。</p>
+            <p><strong>主要功能：</strong></p>
+            <ul>
+                <li>支持多种图片格式（JPG、PNG、GIF、WEBP等）</li>
+                <li>自动处理SSL证书问题</li>
+                <li>支持401授权认证</li>
+                <li>实时预览头像效果</li>
+                <li>上传历史记录</li>
+            </ul>
+            <p><strong>注意事项：</strong></p>
+            <ul>
+                <li>请确保提供的认证信息有效</li>
+                <li>图片URL需要可以直接访问</li>
+                <li>建议使用图床获取稳定图片链接</li>
+            </ul>
         </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🔐 Token管理")
-        st.text_input("当前 _m_h5_tk", value=st.session_state.current_m_h5_tk, disabled=True)
+        """, unsafe_allow_html=True)
         
-        if st.button("🔄 重置 Token", use_container_width=True):
-            st.session_state.current_m_h5_tk = "717336018584e9c7c54f266f5db96fca_1772912434028"
-            st.success("Token已重置")
-            st.rerun()
-    
-    with col2:
-        st.subheader("🗑️ 数据管理")
-        if st.button("🧹 清除所有数据", use_container_width=True):
-            st.session_state.current_m_h5_tk = "717336018584e9c7c54f266f5db96fca_1772912434028"
-            st.session_state.auth_info = {
-                "cookies": {},
-                "headers": {},
-                "params": {},
-                "data": {},
-                "utdid": None,
-                "token": None,
-                "m_h5_tk": None
-            }
-            st.session_state.upload_history = []
-            st.session_state.preview_url = None
-            st.success("所有数据已清除")
-            st.rerun()
-    
-    st.subheader("📝 关于")
-    st.markdown("""
-    <div class="info-box">
-        <h4>闲鱼头像自动更新工具 v2.0</h4>
-        <p>本工具可以帮助你自动更新闲鱼头像，支持各种图片格式和认证方式。</p>
-        <p><strong>主要功能：</strong></p>
-        <ul>
-            <li>支持多种图片格式（JPG、PNG、GIF、WEBP等）</li>
-            <li>自动处理SSL证书问题</li>
-            <li>支持401授权认证</li>
-            <li>实时预览头像效果</li>
-            <li>上传历史记录</li>
-        </ul>
-        <p><strong>注意事项：</strong></p>
-        <ul>
-            <li>请确保提供的认证信息有效</li>
-            <li>图片URL需要可以直接访问</li>
-            <li>建议使用图床获取稳定图片链接</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# 页脚
-st.markdown("---")
-st.markdown(
-    """
-    <div style="text-align: center; color: #666; padding: 1rem;">
-        <p>Made with ❤️ for 闲鱼用户 | 版本 2.0</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    # 页脚
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align: center; color: #666; padding: 1rem;">
+            <p>Made with ❤️ for 闲鱼用户 | 版本 2.0</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# 主程序
+if not st.session_state.authenticated:
+    show_login()
+else:
+    main_app()
