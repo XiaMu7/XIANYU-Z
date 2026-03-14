@@ -1,20 +1,16 @@
 import streamlit as st
 import hashlib
 import json
-import mimetypes
 import time
 import re
 import urllib.parse
 from urllib.parse import urlparse, urlencode, parse_qs
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 import urllib3
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 常量配置
 APP_KEY = "12574478"
 BASE_URL = "https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/"
 UPLOAD_URL = "https://stream-upload.goofish.com/api/upload.api"
@@ -25,129 +21,162 @@ def calc_sign(token: str, t: str, app_key: str, data_str: str) -> str:
     raw = f"{token}&{t}&{app_key}&{data_str}"
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
-def extract_info(request_text: str):
-    """解析用户粘贴的原始请求报文"""
-    info = {"cookies": {}, "headers": {}, "params": {}, "data": {}, "utdid": None}
+def original_extract_logic(request_text: str):
+    """移植原脚本的 extract_from_request 核心逻辑"""
+    info = {
+        "cookies": {},
+        "headers": {},
+        "params": {},
+        "data": {},
+        "utdid": None,
+        "m_h5_tk": ""
+    }
     
     lines = request_text.strip().split('\n')
-    if not lines: return None
+    if not lines: return info
 
-    # 解析Headers
-    for line in lines:
+    # 1. 解析第一行获取 URL 参数 (jsv, appKey 等)
+    first_line = lines[0]
+    url_match = re.search(r'\?(.*?)(?:\s|$)', first_line)
+    if url_match:
+        params_str = url_match.group(1)
+        params = parse_qs(params_str)
+        for k, v in params.items():
+            info["params"][k] = v[0] if v else ""
+
+    # 2. 解析 Headers
+    for line in lines[1:]:
+        line = line.strip()
         if ': ' in line:
             key, value = line.split(': ', 1)
-            info["headers"][key.strip()] = value.strip()
-            if key.lower() == 'x-smallstc':
+            key_lower = key.lower()
+            info["headers"][key_lower] = value # 统一存为小写 key 方便后续调用
+            
+            # 处理 Cookie 字符串提取 _m_h5_tk
+            if key_lower == 'cookie':
+                tk_match = re.search(r'_m_h5_tk=([a-z0-9_]+)', value)
+                if tk_match: info["m_h5_tk"] = tk_match.group(1)
+
+            # 深度解析 x-smallstc
+            if key_lower == 'x-smallstc':
                 try:
-                    stc = json.loads(value)
-                    for k in ['cookie2', 'sgcookie', 'csg', 'unb', 'munb', 'sid']:
-                        if k in stc: info["cookies"][k] = str(stc[k])
+                    smallstc = json.loads(value)
+                    target_keys = ['cookie2', 'sgcookie', 'csg', 'unb', 'munb', 'sid']
+                    for tk in target_keys:
+                        if tk in smallstc:
+                            info["cookies"][tk] = str(smallstc[tk])
                 except: pass
 
-    # 解析Data (utdid)
-    data_match = re.search(r'data=(%7B.*%7D)', request_text)
-    if data_match:
+    # 3. 解析 Data (提取 utdid)
+    # 查找以 data= 开头的行
+    data_line = None
+    for line in reversed(lines):
+        if line.strip().startswith('data='):
+            data_line = line.strip()
+            break
+    
+    if data_line:
+        data_str = data_line[5:] # 去掉 "data="
+        data_str = urllib.parse.unquote(data_str)
         try:
-            decoded_data = json.loads(urllib.parse.unquote(data_match.group(1)))
-            info["data"] = decoded_data
-            info["utdid"] = decoded_data.get("utdid")
-        except: pass
-    
-    # 尝试从Cookie中提取 _m_h5_tk
-    cookie_header = info["headers"].get("cookie", "")
-    tk_match = re.search(r'_m_h5_tk=([a-z0-9_]+)', cookie_header)
-    info["m_h5_tk"] = tk_match.group(1) if tk_match else ""
-    
+            info["data"] = json.loads(data_str)
+            info["utdid"] = info["data"].get("utdid")
+        except:
+            # 正则备选方案
+            utdid_match = re.search(r'utdid[":]+([^"]+)', data_str)
+            if utdid_match: info["utdid"] = utdid_match.group(1)
+
     return info
 
-def process_update(target_img_url, auth_info):
+def run_task(img_url, auth_info):
     session = requests.Session()
     session.verify = False
     
-    # 1. 下载原始图片
-    st.info("正在从目标地址下载图片...")
-    img_res = session.get(target_img_url, timeout=15)
-    img_res.raise_for_status()
-    
-    # 2. 上传至闲鱼服务器
-    st.info("正在同步至闲鱼图床...")
+    # 下载图片
+    try:
+        img_res = session.get(img_url, timeout=20)
+        img_res.raise_for_status()
+    except Exception as e:
+        st.error(f"图片下载失败: {e}")
+        return
+
+    # 上传图片
+    st.info("正在上传图片至闲鱼服务器...")
     files = {'file': ('avatar.jpg', img_res.content, 'image/jpeg')}
-    upload_data = {"appkey": "fleamarket", "bizCode": "fleamarket", "floderId": "0"}
+    up_payload = {"appkey": "fleamarket", "bizCode": "fleamarket", "floderId": "0", "name": "fileFromAlbum"}
     
-    up_res = session.post(UPLOAD_URL, data=upload_data, files=files, headers={
+    # 继承原始 Header 进行上传
+    up_headers = {
         "User-Agent": auth_info["headers"].get("user-agent", ""),
         "Referer": "https://servicewechat.com/"
-    })
+    }
     
-    final_img_url = up_res.json().get("object", {}).get("url")
-    if not final_img_url:
-        st.error(f"同步失败: {up_res.text}")
+    up_res = session.post(UPLOAD_URL, data=up_payload, files=files, headers=up_headers)
+    up_json = up_res.json()
+    
+    xianyu_img_url = up_json.get("object", {}).get("url")
+    if not xianyu_img_url:
+        st.error(f"上传失败，请检查数据有效性: {up_json}")
         return
-    
-    st.success(f"同步成功: {final_img_url}")
 
-    # 3. 发送更新头像指令
-    st.info("正在更新个人资料...")
+    # 更新头像
+    st.info(f"上传成功！获得链接: {xianyu_img_url}")
     t = str(int(time.time() * 1000))
     token = auth_info["m_h5_tk"].split('_')[0] if '_' in auth_info["m_h5_tk"] else ""
     
-    post_data_obj = {
+    profile_data = {
         "utdid": auth_info["utdid"],
         "platform": "windows",
         "miniAppVersion": "9.9.9",
         "profileCode": "avatar",
-        "profileImageUrl": final_img_url
+        "profileImageUrl": xianyu_img_url
     }
-    data_str = json.dumps(post_data_obj, separators=(",", ":"))
-    sign = calc_sign(token, t, APP_KEY, data_str)
+    data_json = json.dumps(profile_data, separators=(",", ":"), ensure_ascii=False)
+    sign = calc_sign(token, t, APP_KEY, data_json)
     
     params = {
         "jsv": "2.4.12", "appKey": APP_KEY, "t": t, "sign": sign,
         "v": "1.0", "type": "originaljson", "accountSite": "xianyu",
-        "api": "mtop.idle.wx.user.profile.update"
+        "dataType": "json", "api": "mtop.idle.wx.user.profile.update"
     }
     
-    headers = {
+    update_headers = {
         "content-type": "application/x-www-form-urlencoded",
         "user-agent": auth_info["headers"].get("user-agent", ""),
         "bx-umidtoken": auth_info["headers"].get("bx-umidtoken", ""),
         "x-ticid": auth_info["headers"].get("x-ticid", ""),
+        "mini-janus": auth_info["headers"].get("mini-janus", ""),
     }
     
-    cookies = auth_info["cookies"]
-    cookies["_m_h5_tk"] = auth_info["m_h5_tk"]
+    resp = session.post(BASE_URL, params=params, headers=update_headers, cookies=auth_info["cookies"], data={"data": data_json})
+    return resp.json()
 
-    final_res = session.post(BASE_URL, params=params, headers=headers, cookies=cookies, data={"data": data_str})
-    return final_res.json()
+# --- UI 界面 ---
+st.title("🐟 闲鱼头像自动更新 (专业版)")
+st.caption("使用原脚本解析逻辑，适配 Windows 微信小程序抓包数据")
 
-# Streamlit UI
-st.title("🐟 闲鱼头像一键更新工具")
-st.markdown("通过微信小程序抓包的数据，快速更新你的闲鱼头像。")
+target_url = st.text_input("1. 输入你想要设置的新头像地址", placeholder="http://xxx.com/a.jpg")
+raw_data = st.text_area("2. 粘贴抓包获取的完整 HTTP 请求报文", height=350, help="请确保包含从 POST 第一行直到末尾 data={} 的所有内容")
 
-with st.sidebar:
-    st.header("使用帮助")
-    st.write("1. 在电脑微信打开闲鱼小程序")
-    st.write("2. 使用抓包工具获取修改头像的 POST 请求")
-    st.write("3. 复制完整的 **Headers** 和 **Data** 粘贴到右侧")
-
-img_input = st.text_input("1. 目标头像图片 URL", placeholder="https://example.com/my_new_avatar.jpg")
-raw_request = st.text_area("2. 粘贴完整 HTTP 请求报文 (包含 Headers 和 Data)", height=300)
-
-if st.button("🚀 开始更新"):
-    if not img_input or not raw_request:
-        st.warning("请填写完整信息")
+if st.button("开始执行"):
+    if not target_url or not raw_data:
+        st.warning("请填入完整信息")
     else:
-        try:
-            info = extract_info(raw_request)
-            if not info["utdid"] or not info["m_h5_tk"]:
-                st.error("无法从请求中解析出 utdid 或 _m_h5_tk，请检查粘贴内容是否完整。")
-            else:
-                with st.spinner("执行中..."):
-                    result = process_update(img_input, info)
+        info = original_extract_logic(raw_data)
+        
+        # 调试信息展示（仅在报错时检查）
+        if not info["utdid"] or not info["m_h5_tk"]:
+            st.error("解析失败！未能找到关键参数。")
+            with st.expander("点击查看解析出的数据状态"):
+                st.write("utdid:", info["utdid"])
+                st.write("_m_h5_tk:", info["m_h5_tk"])
+                st.write("Headers数量:", len(info["headers"]))
+        else:
+            with st.spinner("程序运行中..."):
+                final_res = run_task(target_url, info)
+                if final_res:
                     st.divider()
-                    st.json(result)
-                    if "SUCCESS" in str(result.get("ret", "")):
+                    st.json(final_res)
+                    if "SUCCESS" in str(final_res.get("ret", "")):
                         st.balloons()
-                        st.success("头像更新成功！")
-        except Exception as e:
-            st.error(f"发生错误: {str(e)}")
+                        st.success("头像更新成功！请刷新闲鱼查看。")
