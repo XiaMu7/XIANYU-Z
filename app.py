@@ -92,6 +92,10 @@ if 'gradient_colors' not in st.session_state:
     ]
     st.session_state.current_gradient = random.choice(st.session_state.gradient_colors)
 
+if 'copy_success' not in st.session_state:
+    st.session_state.copy_success = False
+    st.session_state.copied_text = ""
+
 # 自定义CSS美化
 st.markdown("""
 <style>
@@ -480,28 +484,6 @@ st.markdown("""
         border-radius: 12px;
     }
     
-    .url-link {
-        display: inline-block;
-        padding: 0.6rem 1.2rem;
-        background: white;
-        border-radius: 16px;
-        border: 2px solid #667eea;
-        color: #667eea;
-        text-decoration: none;
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-        margin: 0.5rem 0;
-        transition: all 0.3s ease;
-        font-weight: 600;
-    }
-    
-    .url-link:hover {
-        background: #667eea;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-    }
-    
     /* 成功消息样式 */
     .success-message {
         background: linear-gradient(135deg, #84fab0, #8fd3f4);
@@ -636,41 +618,6 @@ st.markdown("""
         background: linear-gradient(135deg, #f8faff, #f0f3ff);
     }
 </style>
-
-<!-- 添加JavaScript复制功能 -->
-<script>
-function copyToClipboard(text, btn) {
-    // 创建临时输入框
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    textarea.setSelectionRange(0, 99999);
-    
-    try {
-        // 执行复制命令
-        document.execCommand('copy');
-        
-        // 修改按钮样式
-        const originalText = btn.innerText;
-        btn.innerText = '✓ 已复制';
-        btn.classList.add('copied');
-        
-        // 2秒后恢复
-        setTimeout(function() {
-            btn.innerText = originalText;
-            btn.classList.remove('copied');
-        }, 2000);
-    } catch (err) {
-        alert('复制失败，请手动复制');
-    }
-    
-    // 移除临时输入框
-    document.body.removeChild(textarea);
-}
-</script>
 """, unsafe_allow_html=True)
 
 # 创建会话函数
@@ -1271,12 +1218,26 @@ def main_app():
                 <div class="tip-content">
                     推荐使用 Superbed 图床获取图片链接：
                 </div>
-                <div class="url-container">
-                    <span class="url-text">https://www.superbed.cn/</span>
-                    <button class="copy-btn" onclick="copyToClipboard('https://www.superbed.cn/', this)">📋 复制</button>
-                </div>
-            </div>
             """, unsafe_allow_html=True)
+            
+            # 使用Streamlit的列布局创建带复制按钮的URL显示
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.code("https://www.superbed.cn/", language="text")
+            with col2:
+                if st.button("📋 复制", key="copy_superbed", use_container_width=True):
+                    st.write("""
+                    <script>
+                    navigator.clipboard.writeText('https://www.superbed.cn/').then(function() {
+                        alert('✅ 复制成功！');
+                    }, function() {
+                        alert('❌ 复制失败，请手动复制');
+                    });
+                    </script>
+                    """, unsafe_allow_html=True)
+                    st.success("已复制到剪贴板！")
+                    time.sleep(1)
+                    st.rerun()
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -1298,12 +1259,28 @@ def main_app():
                 <div class="tip-content">
                     请求URL格式：
                 </div>
-                <div class="url-container">
-                    <span class="url-text">https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&</span>
-                    <button class="copy-btn" onclick="copyToClipboard('https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&', this)">📋 复制</button>
-                </div>
-            </div>
             """, unsafe_allow_html=True)
+            
+            request_url = "https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&"
+            
+            # 使用Streamlit的列布局创建带复制按钮的URL显示
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.code(request_url, language="text")
+            with col2:
+                if st.button("📋 复制", key="copy_request_url", use_container_width=True):
+                    st.write(f"""
+                    <script>
+                    navigator.clipboard.writeText('{request_url}').then(function() {{
+                        alert('✅ 复制成功！');
+                    }}, function() {{
+                        alert('❌ 复制失败，请手动复制');
+                    }});
+                    </script>
+                    """, unsafe_allow_html=True)
+                    st.success("已复制到剪贴板！")
+                    time.sleep(1)
+                    st.rerun()
             
             input_method = st.radio(
                 "选择输入方式",
