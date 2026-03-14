@@ -17,6 +17,7 @@ from urllib3.util.retry import Retry
 import urllib3
 from datetime import datetime
 import pandas as pd
+import random
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -77,27 +78,67 @@ if 'bg_color' not in st.session_state:
 if 'show_success_popup' not in st.session_state:
     st.session_state.show_success_popup = False
 
+if 'gradient_colors' not in st.session_state:
+    # 预设一些漂亮的渐变颜色组合
+    st.session_state.gradient_colors = [
+        ["#667eea", "#764ba2"],  # 紫蓝
+        ["#ff6b6b", "#feca57"],  # 红黄
+        ["#48c6ef", "#6f86d6"],  # 蓝紫
+        ["#f093fb", "#f5576c"],  # 粉红
+        ["#4facfe", "#00f2fe"],  # 蓝青
+        ["#43e97b", "#38f9d7"],  # 绿青
+        ["#fa709a", "#fee140"],  # 粉黄
+        ["#30cfd0", "#330867"],  # 蓝深蓝
+    ]
+    st.session_state.current_gradient = random.choice(st.session_state.gradient_colors)
+
+# JavaScript代码用于复制功能
+COPY_JS = """
+<script>
+function copyToClipboard(text, btnId) {
+    navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById(btnId);
+        var originalText = btn.innerText;
+        btn.innerText = '✓ 已复制';
+        btn.style.background = '#84fab0';
+        setTimeout(function() {
+            btn.innerText = '📋 复制';
+            btn.style.background = '';
+        }, 2000);
+    }, function(err) {
+        alert('复制失败，请手动复制');
+    });
+}
+</script>
+"""
+
 # 自定义CSS美化
 st.markdown("""
 <style>
     /* 全局样式 */
     .stApp {
         background: v-bind(bg_color);
-        transition: background-color 0.3s ease;
+        transition: background-color 0.5s ease;
     }
     
-    /* 主容器样式 - 美化版 */
+    /* 主容器样式 - 动态渐变版 */
     .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
         padding: 2.5rem;
         border-radius: 30px;
         color: white;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         position: relative;
         overflow: hidden;
-        animation: headerFloat 3s ease-in-out infinite;
+        animation: headerPulse 4s ease-in-out infinite;
+        transition: background 1s ease;
+    }
+    
+    @keyframes headerPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        50% { transform: scale(1.02); box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
     }
     
     .main-header::before {
@@ -111,14 +152,25 @@ st.markdown("""
         animation: rotate 20s linear infinite;
     }
     
+    .main-header::after {
+        content: '';
+        position: absolute;
+        bottom: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: rotateReverse 25s linear infinite;
+    }
+    
     @keyframes rotate {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
     
-    @keyframes headerFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
+    @keyframes rotateReverse {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(-360deg); }
     }
     
     .main-header h1 {
@@ -132,6 +184,12 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         display: inline-block;
+        animation: titleGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes titleGlow {
+        0%, 100% { text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        50% { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
     }
     
     .main-header p {
@@ -142,6 +200,12 @@ st.markdown("""
         letter-spacing: 1px;
         font-weight: 300;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        animation: textFloat 3s ease-in-out infinite;
+    }
+    
+    @keyframes textFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
     }
     
     .header-decoration {
@@ -149,8 +213,14 @@ st.markdown("""
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 10px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+        height: 3px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+        animation: scan 3s linear infinite;
+    }
+    
+    @keyframes scan {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
     
     /* 登录卡片样式 */
@@ -258,7 +328,7 @@ st.markdown("""
         margin-bottom: 2rem;
         border: 1px solid rgba(255,255,255,0.2);
         backdrop-filter: blur(10px);
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
     .step-card:hover {
@@ -332,7 +402,28 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
     }
     
-    /* 提示框样式 - 简化版 */
+    /* 复制按钮样式 */
+    .copy-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 10px;
+    }
+    
+    .copy-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* 提示框样式 */
     .tip-box {
         background: #f8f9fa;
         padding: 1rem;
@@ -354,6 +445,25 @@ st.markdown("""
     .tip-content {
         color: #666;
         font-size: 0.95rem;
+    }
+    
+    .url-container {
+        display: flex;
+        align-items: center;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        margin: 0.5rem 0;
+    }
+    
+    .url-text {
+        flex: 1;
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: #0066cc;
+        word-break: break-all;
+        padding: 0.3rem;
     }
     
     .url-link {
@@ -964,6 +1074,9 @@ def main_app():
     # 显示成功弹窗
     show_success_popup()
     
+    # 添加复制功能的JavaScript
+    st.components.v1.html(COPY_JS, height=0)
+    
     # 背景颜色选择器
     with st.sidebar:
         st.markdown("### 🎨 界面设置")
@@ -975,11 +1088,19 @@ def main_app():
             help="点击选择您喜欢的背景颜色"
         )
         
+        # 渐变切换按钮
+        if st.button("🎨 随机切换渐变", use_container_width=True):
+            st.session_state.current_gradient = random.choice(st.session_state.gradient_colors)
+            st.rerun()
+        
         # 应用CSS变量
         st.markdown(f"""
         <style>
             .stApp {{
                 background-color: {st.session_state.bg_color} !important;
+            }}
+            .main-header {{
+                background: linear-gradient(135deg, {st.session_state.current_gradient[0]}, {st.session_state.current_gradient[1]}) !important;
             }}
         </style>
         """, unsafe_allow_html=True)
@@ -991,11 +1112,11 @@ def main_app():
             total_size = sum(float(item["大小"].replace(" KB", "")) for item in st.session_state.upload_history)
             st.metric("总上传大小", f"{total_size:.1f} KB")
     
-    # 主界面内容 - 美化版头部
+    # 主界面内容 - 动态渐变版头部
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("""
-        <div class="main-header">
+        st.markdown(f"""
+        <div class="main-header" style="--gradient-start: {st.session_state.current_gradient[0]}; --gradient-end: {st.session_state.current_gradient[1]};">
             <h1>🖼️ 闲鱼头像自动更新工具</h1>
             <p>✨ 轻松更换你的闲鱼头像，支持各种图片格式 ✨</p>
             <div class="header-decoration"></div>
@@ -1036,7 +1157,7 @@ def main_app():
                 if st.button("🔍 预览图片", key="preview_btn", use_container_width=True):
                     st.session_state.preview_url = image_url
             
-            # 图床链接提示 - 简化版
+            # 图床链接提示 - 带复制按钮
             st.markdown("""
             <div class="tip-box">
                 <div class="tip-title">
@@ -1045,9 +1166,10 @@ def main_app():
                 <div class="tip-content">
                     推荐使用 Superbed 图床获取图片链接：
                 </div>
-                <a href="https://www.superbed.cn/" target="_blank" class="url-link">
-                    🔗 https://www.superbed.cn/
-                </a>
+                <div class="url-container">
+                    <span class="url-text">https://www.superbed.cn/</span>
+                    <button class="copy-btn" id="copySuperbedBtn" onclick="copyToClipboard('https://www.superbed.cn/', 'copySuperbedBtn')">📋 复制</button>
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1062,7 +1184,7 @@ def main_app():
                 </div>
             """, unsafe_allow_html=True)
             
-            # 请求URL提示 - 简化版
+            # 请求URL提示 - 带复制按钮
             st.markdown("""
             <div class="tip-box">
                 <div class="tip-title">
@@ -1071,9 +1193,10 @@ def main_app():
                 <div class="tip-content">
                     请求URL格式：
                 </div>
-                <code style="display: block; padding: 0.5rem; background: #f0f0f0; border-radius: 5px; margin: 0.5rem 0; word-break: break-all;">
-                    https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&
-                </code>
+                <div class="url-container">
+                    <span class="url-text">https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&</span>
+                    <button class="copy-btn" id="copyUrlBtn" onclick="copyToClipboard('https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&', 'copyUrlBtn')">📋 复制</button>
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
