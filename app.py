@@ -86,27 +86,71 @@ st.markdown("""
         transition: background-color 0.3s ease;
     }
     
-    /* 主容器样式 */
+    /* 主容器样式 - 美化版 */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 20px;
+        padding: 2.5rem;
+        border-radius: 30px;
         color: white;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+        animation: headerFloat 3s ease-in-out infinite;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+    
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    @keyframes headerFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
     }
     
     .main-header h1 {
-        font-size: 3rem;
-        font-weight: 700;
+        font-size: 3.5rem;
+        font-weight: 800;
         margin-bottom: 0.5rem;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(to right, #fff, #f0f0f0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
     }
     
     .main-header p {
-        font-size: 1.2rem;
-        opacity: 0.9;
+        font-size: 1.3rem;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+        letter-spacing: 1px;
+        font-weight: 300;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .header-decoration {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 10px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
     }
     
     /* 登录卡片样式 */
@@ -288,39 +332,14 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
     }
     
-    /* 复制按钮样式 */
-    .copy-btn {
-        background: #f0f0f0;
-        color: #333;
-        border: 1px solid #ddd;
-        padding: 0.3rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .copy-btn:hover {
-        background: #e0e0e0;
-        transform: translateY(-2px);
-    }
-    
-    .copy-btn.copied {
-        background: #84fab0;
-        color: #333;
-        border-color: #84fab0;
-    }
-    
-    /* 提示框样式 */
+    /* 提示框样式 - 简化版 */
     .tip-box {
         background: #f8f9fa;
         padding: 1rem;
         border-radius: 10px;
         border-left: 4px solid #667eea;
         margin: 1rem 0;
+        animation: slideIn 0.3s ease;
     }
     
     .tip-title {
@@ -337,31 +356,33 @@ st.markdown("""
         font-size: 0.95rem;
     }
     
-    .url-list {
+    .url-link {
+        display: inline-block;
+        padding: 0.5rem 1rem;
         background: white;
-        padding: 0.5rem;
-        border-radius: 5px;
-        margin: 0.5rem 0;
-    }
-    
-    .url-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.3rem 0;
-        border-bottom: 1px solid #eee;
-    }
-    
-    .url-item:last-child {
-        border-bottom: none;
-    }
-    
-    .url-text {
-        font-family: monospace;
-        font-size: 0.9rem;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
         color: #0066cc;
-        word-break: break-all;
-        flex: 1;
+        text-decoration: none;
+        font-family: monospace;
+        margin: 0.5rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .url-link:hover {
+        background: #f0f0f0;
+        border-color: #667eea;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
     
     /* 成功消息样式 */
@@ -372,17 +393,6 @@ st.markdown("""
         color: white;
         text-align: center;
         animation: slideIn 0.5s ease;
-    }
-    
-    @keyframes slideIn {
-        from {
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
     }
     
     /* 进度条样式 */
@@ -443,33 +453,7 @@ st.markdown("""
         border-radius: 10px;
         border: 1px solid #eee;
     }
-    
-    /* 复制按钮容器 */
-    .copy-container {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        margin-top: 0.5rem;
-    }
 </style>
-
-<!-- 添加JavaScript复制功能 -->
-<script>
-function copyToClipboard(text, elementId) {
-    navigator.clipboard.writeText(text).then(function() {
-        var btn = document.getElementById(elementId);
-        var originalText = btn.innerText;
-        btn.innerText = '✓ 已复制';
-        btn.classList.add('copied');
-        setTimeout(function() {
-            btn.innerText = originalText;
-            btn.classList.remove('copied');
-        }, 2000);
-    }, function(err) {
-        alert('复制失败，请手动复制');
-    });
-}
-</script>
 """, unsafe_allow_html=True)
 
 # 创建会话函数
@@ -1006,24 +990,15 @@ def main_app():
         if st.session_state.upload_history:
             total_size = sum(float(item["大小"].replace(" KB", "")) for item in st.session_state.upload_history)
             st.metric("总上传大小", f"{total_size:.1f} KB")
-        
-        st.markdown("---")
-        st.markdown("### 🔗 常用图床")
-        st.markdown("""
-        - [SM.MS](https://sm.ms/)
-        - [ImgURL](https://imgurl.org/)
-        - [路过图床](https://imgtu.com/)
-        - [阿里云OSS](https://www.aliyun.com/product/oss)
-        - [腾讯云COS](https://cloud.tencent.com/product/cos)
-        """)
     
-    # 主界面内容
+    # 主界面内容 - 美化版头部
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
         <div class="main-header">
             <h1>🖼️ 闲鱼头像自动更新工具</h1>
-            <p>轻松更换你的闲鱼头像，支持各种图片格式</p>
+            <p>✨ 轻松更换你的闲鱼头像，支持各种图片格式 ✨</p>
+            <div class="header-decoration"></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1061,38 +1036,20 @@ def main_app():
                 if st.button("🔍 预览图片", key="preview_btn", use_container_width=True):
                     st.session_state.preview_url = image_url
             
-            # 图床链接提示
+            # 图床链接提示 - 简化版
             st.markdown("""
             <div class="tip-box">
                 <div class="tip-title">
-                    <span>📌 推荐图床链接</span>
+                    <span>📌 推荐图床</span>
                 </div>
                 <div class="tip-content">
-                    以下是常用的图床链接，点击复制按钮可直接使用：
+                    推荐使用 Superbed 图床获取图片链接：
                 </div>
-                <div class="url-list">
+                <a href="https://www.superbed.cn/" target="_blank" class="url-link">
+                    🔗 https://www.superbed.cn/
+                </a>
+            </div>
             """, unsafe_allow_html=True)
-            
-            # 图床链接列表
-            image_hosts = [
-                {"name": "SM.MS 示例", "url": "https://i.imgur.com/example.jpg"},
-                {"name": "ImgURL 示例", "url": "https://imgurl.org/images/example.jpg"},
-                {"name": "路过图床 示例", "url": "https://imgtu.com/i/example"},
-                {"name": "阿里云OSS 示例", "url": "https://your-bucket.oss-cn-hangzhou.aliyuncs.com/example.jpg"},
-                {"name": "腾讯云COS 示例", "url": "https://your-bucket.cos.ap-beijing.myqcloud.com/example.jpg"},
-            ]
-            
-            for i, host in enumerate(image_hosts):
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.markdown(f"**{host['name']}**")
-                    st.code(host['url'], language='text')
-                with col2:
-                    if st.button(f"📋 复制", key=f"copy_host_{i}", use_container_width=True):
-                        st.write(f"<script>navigator.clipboard.writeText('{host['url']}').then(() => {{alert('已复制到剪贴板！');}});</script>", unsafe_allow_html=True)
-                        st.success("已复制！")
-            
-            st.markdown("</div></div>", unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -1105,89 +1062,20 @@ def main_app():
                 </div>
             """, unsafe_allow_html=True)
             
-            # URL提示和复制
+            # 请求URL提示 - 简化版
             st.markdown("""
             <div class="tip-box">
                 <div class="tip-title">
-                    <span>🔗 请求URL模板</span>
+                    <span>🔗 请求URL</span>
                 </div>
                 <div class="tip-content">
-                    以下是完整的请求URL模板，包含所有必要参数：
+                    请求URL格式：
                 </div>
+                <code style="display: block; padding: 0.5rem; background: #f0f0f0; border-radius: 5px; margin: 0.5rem 0; word-break: break-all;">
+                    https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&
+                </code>
+            </div>
             """, unsafe_allow_html=True)
-            
-            # 生成示例URL
-            example_params = {
-                "jsv": "2.4.12",
-                "appKey": APP_KEY,
-                "t": str(int(time.time() * 1000)),
-                "sign": "example_sign",
-                "v": "1.0",
-                "type": "originaljson",
-                "accountSite": "xianyu",
-                "dataType": "json",
-                "api": API
-            }
-            example_url = f"{BASE_URL}?{urlencode(example_params)}"
-            
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.code(example_url, language='text')
-            with col2:
-                if st.button("📋 复制URL", key="copy_url_template", use_container_width=True):
-                    st.write(f"<script>navigator.clipboard.writeText('{example_url}').then(() => {{alert('已复制到剪贴板！');}});</script>", unsafe_allow_html=True)
-                    st.success("已复制！")
-            
-            # Cookie模板
-            st.markdown("""
-            <div class="tip-box">
-                <div class="tip-title">
-                    <span>🍪 Cookie模板</span>
-                </div>
-                <div class="tip-content">
-                    以下是常见的Cookie格式模板：
-                </div>
-            """, unsafe_allow_html=True)
-            
-            cookie_template = "cookie2=值; sgcookie=值; csg=值; unb=值; munb=值; _m_h5_tk=值; _m_h5_tk_enc=值"
-            
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.code(cookie_template, language='text')
-            with col2:
-                if st.button("📋 复制Cookie", key="copy_cookie_template", use_container_width=True):
-                    st.write(f"<script>navigator.clipboard.writeText('{cookie_template}').then(() => {{alert('已复制到剪贴板！');}});</script>", unsafe_allow_html=True)
-                    st.success("已复制！")
-            
-            # Header模板
-            st.markdown("""
-            <div class="tip-box">
-                <div class="tip-title">
-                    <span>📋 Header模板</span>
-                </div>
-                <div class="tip-content">
-                    以下是常见的Header格式：
-                </div>
-            """, unsafe_allow_html=True)
-            
-            header_template = """User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/126.0.0.0
-Content-Type: application/x-www-form-urlencoded
-Accept: application/json
-Referer: https://servicewechat.com/wx9882f2a891880616/74/page-frame.html
-bx-umidtoken: 值
-x-ticid: 值
-mini-janus: 值
-sgcookie: 值"""
-            
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.code(header_template, language='text')
-            with col2:
-                if st.button("📋 复制Headers", key="copy_header_template", use_container_width=True):
-                    st.write(f"<script>navigator.clipboard.writeText(`{header_template}`).then(() => {{alert('已复制到剪贴板！');}});</script>", unsafe_allow_html=True)
-                    st.success("已复制！")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
             
             input_method = st.radio(
                 "选择输入方式",
