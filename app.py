@@ -92,26 +92,6 @@ if 'gradient_colors' not in st.session_state:
     ]
     st.session_state.current_gradient = random.choice(st.session_state.gradient_colors)
 
-# JavaScript代码用于复制功能
-COPY_JS = """
-<script>
-function copyToClipboard(text, btnId) {
-    navigator.clipboard.writeText(text).then(function() {
-        var btn = document.getElementById(btnId);
-        var originalText = btn.innerText;
-        btn.innerText = '✓ 已复制';
-        btn.style.background = '#84fab0';
-        setTimeout(function() {
-            btn.innerText = '📋 复制';
-            btn.style.background = '';
-        }, 2000);
-    }, function(err) {
-        alert('复制失败，请手动复制');
-    });
-}
-</script>
-"""
-
 # 自定义CSS美化
 st.markdown("""
 <style>
@@ -138,7 +118,7 @@ st.markdown("""
     
     @keyframes headerPulse {
         0%, 100% { transform: scale(1); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
-        50% { transform: scale(1.02); box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        50% { transform: scale(1.01); box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
     }
     
     .main-header::before {
@@ -148,19 +128,8 @@ st.markdown("""
         right: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-        animation: rotate 20s linear infinite;
-    }
-    
-    .main-header::after {
-        content: '';
-        position: absolute;
-        bottom: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: rotateReverse 25s linear infinite;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+        animation: rotate 25s linear infinite;
     }
     
     @keyframes rotate {
@@ -168,28 +137,18 @@ st.markdown("""
         to { transform: rotate(360deg); }
     }
     
-    @keyframes rotateReverse {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(-360deg); }
-    }
-    
     .main-header h1 {
-        font-size: 3.5rem;
+        font-size: 3.2rem;
         font-weight: 800;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.8rem;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         position: relative;
         z-index: 1;
-        background: linear-gradient(to right, #fff, #f0f0f0);
+        background: linear-gradient(to right, #ffffff, #f8f9fa);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         display: inline-block;
-        animation: titleGlow 3s ease-in-out infinite;
-    }
-    
-    @keyframes titleGlow {
-        0%, 100% { text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-        50% { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        letter-spacing: 1px;
     }
     
     .main-header p {
@@ -200,12 +159,11 @@ st.markdown("""
         letter-spacing: 1px;
         font-weight: 300;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        animation: textFloat 3s ease-in-out infinite;
-    }
-    
-    @keyframes textFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-3px); }
+        background: rgba(255,255,255,0.15);
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        display: inline-block;
+        backdrop-filter: blur(5px);
     }
     
     .header-decoration {
@@ -214,7 +172,7 @@ st.markdown("""
         left: 0;
         width: 100%;
         height: 3px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
         animation: scan 3s linear infinite;
     }
     
@@ -227,18 +185,32 @@ st.markdown("""
     .login-card {
         background: white;
         padding: 2.5rem;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        max-width: 400px;
-        margin: 2rem auto;
+        border-radius: 25px;
+        box-shadow: 0 15px 50px rgba(102, 126, 234, 0.2);
+        max-width: 450px;
+        margin: 3rem auto;
         text-align: center;
-        animation: fadeIn 0.5s ease;
+        animation: fadeInUp 0.6s ease;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .login-title {
-        font-size: 2rem;
-        font-weight: 600;
-        color: #667eea;
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin-bottom: 1rem;
     }
     
@@ -249,24 +221,14 @@ st.markdown("""
     }
     
     .question-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        font-size: 1.2rem;
+        padding: 1.2rem;
+        border-radius: 15px;
+        margin: 1.5rem 0;
+        font-size: 1.3rem;
         font-weight: 500;
-    }
-    
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
     }
     
     /* 弹窗样式 */
@@ -276,25 +238,31 @@ st.markdown("""
         left: 50%;
         transform: translate(-50%, -50%);
         background: white;
-        padding: 2rem;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        padding: 2.5rem;
+        border-radius: 30px;
+        box-shadow: 0 30px 70px rgba(0,0,0,0.3);
         z-index: 9999;
         text-align: center;
-        animation: popIn 0.3s ease;
-        border: 2px solid #667eea;
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 3px solid #667eea;
     }
     
     .popup-content {
-        font-size: 5rem;
+        font-size: 6rem;
         line-height: 1;
         margin-bottom: 1rem;
+        animation: bounce 0.5s ease infinite alternate;
+    }
+    
+    @keyframes bounce {
+        from { transform: scale(1); }
+        to { transform: scale(1.1); }
     }
     
     .popup-text {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         color: #333;
-        font-weight: 500;
+        font-weight: 600;
     }
     
     .popup-overlay {
@@ -311,7 +279,7 @@ st.markdown("""
     @keyframes popIn {
         from {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.8);
+            transform: translate(-50%, -50%) scale(0.5);
         }
         to {
             opacity: 1;
@@ -322,50 +290,52 @@ st.markdown("""
     /* 卡片样式 */
     .step-card {
         background: white;
-        padding: 2rem;
-        border-radius: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
-        border: 1px solid rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        padding: 1.8rem;
+        border-radius: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        margin-bottom: 1.8rem;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        transition: all 0.3s ease;
     }
     
     .step-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
+        border-color: rgba(102, 126, 234, 0.3);
     }
     
     .step-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #667eea;
-        margin-bottom: 1.5rem;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 1.2rem;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
     
     .step-title .step-number {
-        background: #667eea;
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 1.2rem;
         font-weight: 600;
+        box-shadow: 0 5px 10px rgba(102, 126, 234, 0.3);
     }
     
     /* 预览卡片样式 */
     .preview-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        padding: 1.5rem;
-        border-radius: 20px;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        padding: 1.8rem;
+        border-radius: 25px;
         text-align: center;
         margin-bottom: 1rem;
+        border: 1px solid rgba(102, 126, 234, 0.1);
     }
     
     .preview-image {
@@ -373,121 +343,82 @@ st.markdown("""
         height: 200px;
         border-radius: 50%;
         object-fit: cover;
-        border: 4px solid white;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        margin: 0 auto 1rem auto;
-        transition: transform 0.3s ease;
+        border: 5px solid white;
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        margin: 0 auto 1.2rem auto;
+        transition: all 0.3s ease;
     }
     
     .preview-image:hover {
-        transform: scale(1.05);
+        transform: scale(1.08);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
     }
     
     /* 按钮样式 */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
         border: none;
-        padding: 0.75rem 2rem;
+        padding: 0.8rem 2rem;
         border-radius: 50px;
         font-weight: 600;
         font-size: 1.1rem;
         transition: all 0.3s ease;
         width: 100%;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(255,255,255,0.2);
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
     }
     
     /* 复制按钮样式 */
     .copy-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
         border: none;
-        padding: 0.3rem 1rem;
-        border-radius: 20px;
+        padding: 0.4rem 1.2rem;
+        border-radius: 30px;
         font-size: 0.9rem;
+        font-weight: 500;
         cursor: pointer;
         transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        margin-left: 10px;
+        gap: 6px;
+        margin-left: 12px;
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(255,255,255,0.2);
+        white-space: nowrap;
     }
     
     .copy-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 8px 15px rgba(102, 126, 234, 0.4);
     }
     
-    /* 提示框样式 */
+    .copy-btn.copied {
+        background: linear-gradient(135deg, #84fab0, #8fd3f4);
+        color: #333;
+    }
+    
+    /* 提示框样式 - 美化版 */
     .tip-box {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #667eea;
-        margin: 1rem 0;
-        animation: slideIn 0.3s ease;
+        background: linear-gradient(135deg, #f8faff, #f0f3ff);
+        padding: 1.2rem;
+        border-radius: 20px;
+        border-left: 6px solid #667eea;
+        margin: 1.2rem 0;
+        animation: slideInRight 0.4s ease;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
     }
     
-    .tip-title {
-        font-weight: 600;
-        color: #667eea;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .tip-content {
-        color: #666;
-        font-size: 0.95rem;
-    }
-    
-    .url-container {
-        display: flex;
-        align-items: center;
-        background: white;
-        padding: 0.5rem;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        margin: 0.5rem 0;
-    }
-    
-    .url-text {
-        flex: 1;
-        font-family: monospace;
-        font-size: 0.9rem;
-        color: #0066cc;
-        word-break: break-all;
-        padding: 0.3rem;
-    }
-    
-    .url-link {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        background: white;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        color: #0066cc;
-        text-decoration: none;
-        font-family: monospace;
-        margin: 0.5rem 0;
-        transition: all 0.3s ease;
-    }
-    
-    .url-link:hover {
-        background: #f0f0f0;
-        border-color: #667eea;
-    }
-    
-    @keyframes slideIn {
+    @keyframes slideInRight {
         from {
             opacity: 0;
-            transform: translateX(-10px);
+            transform: translateX(-20px);
         }
         to {
             opacity: 1;
@@ -495,75 +426,251 @@ st.markdown("""
         }
     }
     
+    .tip-title {
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.1rem;
+    }
+    
+    .tip-title span {
+        background: rgba(102, 126, 234, 0.1);
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+    }
+    
+    .tip-content {
+        color: #555;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    /* URL容器样式 - 美化版 */
+    .url-container {
+        display: flex;
+        align-items: center;
+        background: white;
+        padding: 0.6rem 1rem;
+        border-radius: 16px;
+        border: 2px solid #eef2ff;
+        margin: 0.8rem 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    
+    .url-container:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.15);
+    }
+    
+    .url-text {
+        flex: 1;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        color: #2c3e50;
+        word-break: break-all;
+        padding: 0.3rem 0;
+        letter-spacing: 0.3px;
+        background: #f8faff;
+        padding: 0.4rem 0.8rem;
+        border-radius: 12px;
+    }
+    
+    .url-link {
+        display: inline-block;
+        padding: 0.6rem 1.2rem;
+        background: white;
+        border-radius: 16px;
+        border: 2px solid #667eea;
+        color: #667eea;
+        text-decoration: none;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        margin: 0.5rem 0;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    
+    .url-link:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
     /* 成功消息样式 */
     .success-message {
-        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-        padding: 1rem;
-        border-radius: 10px;
+        background: linear-gradient(135deg, #84fab0, #8fd3f4);
+        padding: 1.2rem;
+        border-radius: 20px;
         color: white;
         text-align: center;
-        animation: slideIn 0.5s ease;
+        animation: slideInDown 0.5s ease;
+        font-weight: 600;
+        font-size: 1.1rem;
+        box-shadow: 0 10px 25px rgba(132, 250, 176, 0.3);
+    }
+    
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     /* 进度条样式 */
     .stProgress > div > div > div > div {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #667eea, #764ba2) !important;
+        border-radius: 10px;
     }
     
     /* 标签页样式 */
     .stTabs [data-baseweb="tab-list"] {
         gap: 2rem;
-        background-color: white;
-        padding: 0.5rem;
-        border-radius: 50px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: white;
+        padding: 0.6rem;
+        border-radius: 60px;
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.15);
+        margin-bottom: 1.5rem;
     }
     
     .stTabs [data-baseweb="tab"] {
         border-radius: 50px;
-        padding: 0.5rem 2rem;
+        padding: 0.6rem 2rem;
         font-weight: 600;
+        color: #666;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        color: white !important;
     }
     
     /* 信息框样式 */
     .info-box {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #667eea;
+        background: linear-gradient(135deg, #f8faff, #f0f3ff);
+        padding: 1.5rem;
+        border-radius: 20px;
+        border-left: 6px solid #667eea;
         margin: 1rem 0;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
     }
     
     /* 统计卡片 */
     .stat-card {
         background: white;
         padding: 1.5rem;
-        border-radius: 15px;
+        border-radius: 25px;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(102, 126, 234, 0.15);
     }
     
     .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #667eea;
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.2;
     }
     
     .stat-label {
         color: #666;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         margin-top: 0.5rem;
+        font-weight: 500;
     }
     
-    /* 颜色选择器样式 */
-    .color-picker {
-        margin: 1rem 0;
-        padding: 1rem;
-        background: white;
-        border-radius: 10px;
-        border: 1px solid #eee;
+    /* 输入框样式 */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #eef2ff;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* 文本区域样式 */
+    .stTextArea > div > div > textarea {
+        border-radius: 16px;
+        border: 2px solid #eef2ff;
+        transition: all 0.3s ease;
+    }
+    
+    .stTextArea > div > div > textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* 单选按钮样式 */
+    .stRadio > div {
+        background: #f8faff;
+        padding: 0.8rem;
+        border-radius: 50px;
+        border: 1px solid #eef2ff;
+    }
+    
+    /* 侧边栏样式 */
+    .css-1d391kg {
+        background: linear-gradient(135deg, #f8faff, #f0f3ff);
     }
 </style>
+
+<!-- 添加JavaScript复制功能 -->
+<script>
+function copyToClipboard(text, btn) {
+    // 创建临时输入框
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    
+    try {
+        // 执行复制命令
+        document.execCommand('copy');
+        
+        // 修改按钮样式
+        const originalText = btn.innerText;
+        btn.innerText = '✓ 已复制';
+        btn.classList.add('copied');
+        
+        // 2秒后恢复
+        setTimeout(function() {
+            btn.innerText = originalText;
+            btn.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        alert('复制失败，请手动复制');
+    }
+    
+    // 移除临时输入框
+    document.body.removeChild(textarea);
+}
+</script>
 """, unsafe_allow_html=True)
 
 # 创建会话函数
@@ -1074,9 +1181,6 @@ def main_app():
     # 显示成功弹窗
     show_success_popup()
     
-    # 添加复制功能的JavaScript
-    st.components.v1.html(COPY_JS, height=0)
-    
     # 背景颜色选择器
     with st.sidebar:
         st.markdown("### 🎨 界面设置")
@@ -1100,7 +1204,8 @@ def main_app():
                 background-color: {st.session_state.bg_color} !important;
             }}
             .main-header {{
-                background: linear-gradient(135deg, {st.session_state.current_gradient[0]}, {st.session_state.current_gradient[1]}) !important;
+                --gradient-start: {st.session_state.current_gradient[0]};
+                --gradient-end: {st.session_state.current_gradient[1]};
             }}
         </style>
         """, unsafe_allow_html=True)
@@ -1116,7 +1221,7 @@ def main_app():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown(f"""
-        <div class="main-header" style="--gradient-start: {st.session_state.current_gradient[0]}; --gradient-end: {st.session_state.current_gradient[1]};">
+        <div class="main-header">
             <h1>🖼️ 闲鱼头像自动更新工具</h1>
             <p>✨ 轻松更换你的闲鱼头像，支持各种图片格式 ✨</p>
             <div class="header-decoration"></div>
@@ -1168,7 +1273,7 @@ def main_app():
                 </div>
                 <div class="url-container">
                     <span class="url-text">https://www.superbed.cn/</span>
-                    <button class="copy-btn" id="copySuperbedBtn" onclick="copyToClipboard('https://www.superbed.cn/', 'copySuperbedBtn')">📋 复制</button>
+                    <button class="copy-btn" onclick="copyToClipboard('https://www.superbed.cn/', this)">📋 复制</button>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1195,7 +1300,7 @@ def main_app():
                 </div>
                 <div class="url-container">
                     <span class="url-text">https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&</span>
-                    <button class="copy-btn" id="copyUrlBtn" onclick="copyToClipboard('https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&', 'copyUrlBtn')">📋 复制</button>
+                    <button class="copy-btn" onclick="copyToClipboard('https://acs.m.goofish.com/h5/mtop.idle.wx.user.profile.update/1.0/2.0/?jsv=2.4.12&', this)">📋 复制</button>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1381,7 +1486,7 @@ data={"utdid":"xxxx","platform":"mac","miniAppVersion":"9.9.9","profileCode":"av
             else:
                 st.markdown("""
                 <div class="preview-card">
-                    <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center;">
                         <span style="color: white; font-size: 3rem;">🖼️</span>
                     </div>
                     <p style="color: #666;">输入URL后点击"预览图片"查看效果</p>
